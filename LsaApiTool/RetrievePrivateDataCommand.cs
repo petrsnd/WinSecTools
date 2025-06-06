@@ -16,7 +16,10 @@ namespace Petrsnd.LsaApiTool
         {
             using (var lsaPolicyHandle = LsaApi.OpenPolicyHandle())
             {
-                Console.WriteLine(lsaPolicyHandle.RetrievePrivateData(KeyName!));
+                var privateData = lsaPolicyHandle.RetrievePrivateData(KeyName!);
+                Console.WriteLine($"LENGTH: {privateData.Length}, BYTE_LENGTH: {privateData.LengthInBytes}");
+                Console.WriteLine($"STRING: {privateData.ToString()}");
+                Console.WriteLine($"HEXVAL: {privateData.ToHexString()}");
             }
         }
     }

@@ -55,7 +55,7 @@ namespace Petrsnd.WinSecLib
             }
         }
 
-        public static unsafe string CallLsaRetrievePrivateData(LsaCloseSafeHandle policyHandle, string keyName)
+        public static unsafe LsaPrivateData CallLsaRetrievePrivateData(LsaCloseSafeHandle policyHandle, string keyName)
         {
             fixed (char* keyNameLocal = keyName)
             {
@@ -73,7 +73,7 @@ namespace Petrsnd.WinSecLib
                     throw new LsaApiException(rval);
                 }
 
-                var privateData = new string(privateDataLsaString->Buffer, 0, privateDataLsaString->Length / sizeof(char));
+                var privateData = new LsaPrivateData(*privateDataLsaString);
                 rval = PInvoke.LsaFreeMemory(privateDataLsaString);
                 if (rval != NTSTATUS.STATUS_SUCCESS)
                 {
@@ -84,11 +84,11 @@ namespace Petrsnd.WinSecLib
             }
         }
 
-        public static unsafe void CallLsaStorePrivateData(LsaCloseSafeHandle policyHandle, string keyName, string privateData)
+        public static unsafe void CallLsaStorePrivateData(LsaCloseSafeHandle policyHandle, string keyName, LsaPrivateData privateData)
         {
             fixed (char* keyNameLocal = keyName)
             {
-                fixed (char* privateDataLocal = privateData)
+                fixed (char* privateDataLocal = privateData.Buffer)
                 {
                     var keyNameLsaString = new LSA_UNICODE_STRING
                     {

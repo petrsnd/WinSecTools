@@ -15,12 +15,12 @@ namespace Petrsnd.WinSecLib
             _policyHandle = policyHandle;
         }
 
-        public string RetrievePrivateData(string keyName)
+        public LsaPrivateData RetrievePrivateData(string keyName)
         {
             return LsaApiPInvokeHelper.CallLsaRetrievePrivateData(_policyHandle, keyName);
         }
 
-        public void StorePrivateData(string keyName, string privateData)
+        public void StorePrivateData(string keyName, LsaPrivateData privateData)
         {
             LsaApiPInvokeHelper.CallLsaStorePrivateData(_policyHandle, keyName, privateData);
         }

@@ -20,7 +20,7 @@ namespace Petrsnd.LsaApiTool
         {
             using (var lsaPolicyHandle = LsaApi.OpenPolicyHandle())
             {
-                lsaPolicyHandle.StorePrivateData(KeyName!, PrivateData!);
+                lsaPolicyHandle.StorePrivateData(KeyName!, new LsaPrivateData(PrivateData!));
                 Console.WriteLine("SUCCESS");
             }
         }
