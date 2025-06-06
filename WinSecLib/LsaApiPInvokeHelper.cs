@@ -27,8 +27,8 @@ namespace Petrsnd.WinSecLib
                 {
                     systemNameLsaString = new LSA_UNICODE_STRING
                     {
-                        Length = (ushort)systemName.Length,
-                        MaximumLength = (ushort)systemName.Length,
+                        Length = (ushort)(systemName.Length * sizeof(char)),
+                        MaximumLength = (ushort)(systemName.Length * sizeof(char)),
                         Buffer = systemNameLocal
                     };
                 }
@@ -61,8 +61,8 @@ namespace Petrsnd.WinSecLib
             {
                 var keyNameLsaString = new LSA_UNICODE_STRING
                 {
-                    Length = (ushort)keyName.Length,
-                    MaximumLength = (ushort)keyName.Length,
+                    Length = (ushort)(keyName.Length * sizeof(char)),
+                    MaximumLength = (ushort)(keyName.Length * sizeof(char)),
                     Buffer = keyNameLocal
                 };
 
@@ -73,7 +73,7 @@ namespace Petrsnd.WinSecLib
                     throw new LsaApiException(rval);
                 }
 
-                var privateData = new string(privateDataLsaString->Buffer, 0, privateDataLsaString->Length);
+                var privateData = new string(privateDataLsaString->Buffer, 0, privateDataLsaString->Length / sizeof(char));
                 rval = PInvoke.LsaFreeMemory(privateDataLsaString);
                 if (rval != NTSTATUS.STATUS_SUCCESS)
                 {
@@ -92,15 +92,15 @@ namespace Petrsnd.WinSecLib
                 {
                     var keyNameLsaString = new LSA_UNICODE_STRING
                     {
-                        Length = (ushort)keyName.Length,
-                        MaximumLength = (ushort)keyName.Length,
+                        Length = (ushort)(keyName.Length * sizeof(char)),
+                        MaximumLength = (ushort)(keyName.Length * sizeof(char)),
                         Buffer = keyNameLocal
                     };
 
                     var privateDataLsaString = new LSA_UNICODE_STRING
                     {
-                        Length = (ushort)privateData.Length,
-                        MaximumLength = (ushort)privateData.Length,
+                        Length = (ushort)(privateData.Length * sizeof(char)),
+                        MaximumLength = (ushort)(privateData.Length * sizeof(char)),
                         Buffer = privateDataLocal
                     };
 

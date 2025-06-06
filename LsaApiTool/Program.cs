@@ -13,7 +13,7 @@ namespace Petrsnd.LsaApiTool
             {
                 command.Execute();
             }
-            catch (NetApiException ex)
+            catch (LsaApiException ex)
             {
                 Console.WriteLine(ex.Message);
                 Environment.Exit(1);
@@ -21,7 +21,7 @@ namespace Petrsnd.LsaApiTool
             catch (Exception ex)
             {
                 Console.WriteLine("Fatal exception occurred.");
-                Console.WriteLine(ex);
+                Console.WriteLine(ex.Message);
                 Environment.Exit(1);
             }
         }
