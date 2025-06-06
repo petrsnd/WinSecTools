@@ -1,0 +1,16 @@
+{
+  "profiles": {
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    },
+    "LsaApiTool store": {
+      "commandName": "Project",
+      "commandLineArgs": "store -k ABCD -d test123"
+    },
+    "LsaApiTool retrieve": {
+      "commandName": "Project",
+      "commandLineArgs": "retrieve -k ABCD"
+    }
+  }
+}
