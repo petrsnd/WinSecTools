@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36127.28
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetApiTool", "NetApiTool\NetApiTool.csproj", "{A0A5B3DB-2DF8-4C0B-88BE-159F3C57FFC3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9443E028-39D4-4059-87FC-449760671A66} = {9443E028-39D4-4059-87FC-449760671A66}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinSecLib", "WinSecLib\WinSecLib.csproj", "{9443E028-39D4-4059-87FC-449760671A66}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LsaApiTool", "LsaApiTool\LsaApiTool.csproj", "{3D3AEC86-3057-442D-BFFD-F961F7DBAC60}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A0A5B3DB-2DF8-4C0B-88BE-159F3C57FFC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0A5B3DB-2DF8-4C0B-88BE-159F3C57FFC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0A5B3DB-2DF8-4C0B-88BE-159F3C57FFC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0A5B3DB-2DF8-4C0B-88BE-159F3C57FFC3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9443E028-39D4-4059-87FC-449760671A66}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9443E028-39D4-4059-87FC-449760671A66}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9443E028-39D4-4059-87FC-449760671A66}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9443E028-39D4-4059-87FC-449760671A66}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D3AEC86-3057-442D-BFFD-F961F7DBAC60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D3AEC86-3057-442D-BFFD-F961F7DBAC60}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D3AEC86-3057-442D-BFFD-F961F7DBAC60}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D3AEC86-3057-442D-BFFD-F961F7DBAC60}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2BCB1C20-8FCE-4A82-B0D0-B50510B86F76}
+	EndGlobalSection
+EndGlobal
