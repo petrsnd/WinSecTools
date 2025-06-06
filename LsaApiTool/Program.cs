@@ -21,7 +21,7 @@ namespace Petrsnd.LsaApiTool
             catch (Exception ex)
             {
                 Console.WriteLine("Fatal exception occurred.");
-                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex);
                 Environment.Exit(1);
             }
         }

@@ -24,11 +24,16 @@ namespace Petrsnd.WinSecLib
         {
             var winError = PInvoke.LsaNtStatusToWinError(status);
             var buffer = new char[32768];
-            var bytesWritten = PInvoke.FormatMessage(FORMAT_MESSAGE_OPTIONS.FORMAT_MESSAGE_IGNORE_INSERTS, null, winError,
-                0U, buffer.AsSpan(), (uint)buffer.Length, (sbyte**)IntPtr.Zero.ToPointer());
+            var bytesWritten = PInvoke.FormatMessage(FORMAT_MESSAGE_OPTIONS.FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_OPTIONS.FORMAT_MESSAGE_FROM_SYSTEM,
+                null, winError, 0U, buffer.AsSpan(), (uint)buffer.Length, (sbyte**)IntPtr.Zero.ToPointer());
+            if (bytesWritten == 0)
+            {
+                return $"NTSTATUS {status:X} ({winError}): No message found or FormatMessage failed.";
+            }
+
             fixed (char* bufferLocal = buffer)
             {
-                return new string(bufferLocal, 0, (int)bytesWritten);
+                return $"NTSTATUS {status:X} ({winError}): {new string(bufferLocal, 0, (int)bytesWritten)}";
             }
         }
     }

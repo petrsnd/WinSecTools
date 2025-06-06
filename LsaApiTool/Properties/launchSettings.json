@@ -10,7 +10,7 @@
     },
     "LsaApiTool retrieve": {
       "commandName": "Project",
-      "commandLineArgs": "retrieve -k ABCD"
+      "commandLineArgs": "retrieve -k 'ABCD'"
     }
   }
 }
