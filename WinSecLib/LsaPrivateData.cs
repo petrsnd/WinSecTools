@@ -24,7 +24,12 @@ namespace Petrsnd.WinSecLib
             fixed (char* bufPtr = Buffer)
             {
                 var bufSpan = new Span<char>(bufPtr, Buffer.Length);
-                lsaUnicodeStr.Buffer.AsSpan().CopyTo(bufSpan);
+                // Cannot use PWSTR.AsSpan() here because it assumes a null-terminated string to
+                // calculate the length of the Span<char> with an implementation based on PWCSTR.
+                // This can throw  -->  lsaUnicodeStr.Buffer.AsSpan().CopyTo(bufSpan);
+                // See: https://learn.microsoft.com/en-us/windows/win32/api/lsalookup/ns-lsalookup-lsa_unicode_string
+                var lsaSpan = new Span<char>(lsaUnicodeStr.Buffer, lsaUnicodeStr.Length / sizeof(char));
+                lsaSpan.CopyTo(bufSpan);
             }
         }
 

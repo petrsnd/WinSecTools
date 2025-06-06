@@ -6,11 +6,11 @@
     },
     "LsaApiTool store": {
       "commandName": "Project",
-      "commandLineArgs": "store -k ABCD -d test123"
+      "commandLineArgs": "store -k ABCD -d rdp1"
     },
     "LsaApiTool retrieve": {
       "commandName": "Project",
-      "commandLineArgs": "retrieve -k 'ABCD'"
+      "commandLineArgs": "retrieve -k ABCD"
     }
   }
 }
