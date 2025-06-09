@@ -4,9 +4,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Security.Principal;
 using System.Text.Json.Serialization;
-using Windows.Win32;
 using Windows.Win32.NetworkManagement.NetManagement;
-using Windows.Win32.Security;
 
 namespace Petrsnd.WinSecLib
 {
@@ -123,20 +121,6 @@ namespace Petrsnd.WinSecLib
                 var byteArray = new byte[21];
                 Marshal.Copy((IntPtr)logonHours, byteArray, 0, 21);
                 return new BitArray(byteArray);
-            }
-
-            return null;
-        }
-
-        [SupportedOSPlatform("windows5.1.2600")]
-        private static unsafe SecurityIdentifier? GetSid(PSID pSid)
-        {
-            if (!pSid.IsNull && PInvoke.IsValidSid(pSid))
-            {
-                var length = PInvoke.GetLengthSid(pSid);
-                byte[] sidBytes = new byte[length];
-                Marshal.Copy(new IntPtr(pSid), sidBytes, 0, (int)length);
-                return new SecurityIdentifier(sidBytes, 0);
             }
 
             return null;
@@ -290,7 +274,7 @@ namespace Petrsnd.WinSecLib
             unsafe
             {
                 userInformation.LogonHours = GetLogonHours(userInfo.usri4_logon_hours);
-                userInformation.Sid = GetSid(userInfo.usri4_user_sid);
+                userInformation.Sid = Utils.GetSid(userInfo.usri4_user_sid);
             }
 
             return userInformation;
@@ -370,7 +354,7 @@ namespace Petrsnd.WinSecLib
 
             unsafe
             {
-                userInformation.Sid = GetSid(userInfo.usri23_user_sid);
+                userInformation.Sid = Utils.GetSid(userInfo.usri23_user_sid);
             }
 
             return userInformation;
@@ -390,7 +374,7 @@ namespace Petrsnd.WinSecLib
 
             unsafe
             {
-                userInformation.Sid = GetSid(userInfo.usri24_user_sid);
+                userInformation.Sid = Utils.GetSid(userInfo.usri24_user_sid);
             }
 
             return userInformation;

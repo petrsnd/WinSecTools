@@ -25,6 +25,12 @@ namespace Petrsnd.WinSecLib
             LsaApiPInvokeHelper.CallLsaStorePrivateData(_policyHandle, keyName, privateData);
         }
 
+        public LsaDnsDomainInfo GetDnsDomainInfo()
+        {
+            // Almost everything is obsolete, so we only support getting PolicyDnsDomainInformation
+            return LsaApiPInvokeHelper.CallLsaQueryInformationPolicy(_policyHandle);
+        }
+
         protected virtual void Dispose(bool disposing)
         {
             if (!_disposedValue)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Windows.Win32;
 using Windows.Win32.Foundation;
@@ -13,6 +14,16 @@ namespace Petrsnd.WinSecLib
     [SupportedOSPlatform("windows5.1.2600")]
     internal static class LsaApiPInvokeHelper
     {
+        public static unsafe string? ConvertLsaUnicodeStringToString(LSA_UNICODE_STRING lsaUnicodeStr)
+        {
+            if (lsaUnicodeStr.Buffer == null)
+            {
+                return null;
+            }
+
+            return new string(lsaUnicodeStr.Buffer, 0, lsaUnicodeStr.Length / sizeof(char));
+        }
+
         public static unsafe LsaCloseSafeHandle CallLsaOpenPolicy(string? systemName, uint desiredAccess)
         {
             if (systemName?.Length > ushort.MaxValue)
@@ -110,6 +121,26 @@ namespace Petrsnd.WinSecLib
                         throw new LsaApiException(rval);
                     }
                 }
+            }
+        }
+
+        public static unsafe LsaDnsDomainInfo CallLsaQueryInformationPolicy(LsaCloseSafeHandle policyHandle)
+        {
+            var rval = PInvoke.LsaQueryInformationPolicy(policyHandle, POLICY_INFORMATION_CLASS.PolicyDnsDomainInformation, out void* buffer);
+            if (rval != NTSTATUS.STATUS_SUCCESS)
+            {
+                throw new LsaApiException(rval);
+            }
+
+            try
+            {
+                IntPtr bufptr = new IntPtr(buffer);
+                var userInfo = (POLICY_DNS_DOMAIN_INFO)Marshal.PtrToStructure(bufptr, typeof(POLICY_DNS_DOMAIN_INFO))!;
+                return new LsaDnsDomainInfo(userInfo);
+            }
+            finally
+            {
+                PInvoke.LsaFreeMemory(buffer);
             }
         }
     }
