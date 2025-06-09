@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 using System.Text;
 using Windows.Win32.Security.Authentication.Identity;
 
@@ -12,7 +11,7 @@ namespace Petrsnd.WinSecLib
             Buffer = str.ToCharArray();
         }
 
-        public LsaPrivateData(byte[] buf)
+        public LsaPrivateData(char[] buf)
         {
             Buffer = new char[buf.Length];
             Array.Copy(buf, Buffer, buf.Length);

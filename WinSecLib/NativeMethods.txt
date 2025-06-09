@@ -21,8 +21,10 @@ IsValidSid
 GetLengthSid
 LsaOpenPolicy
 LsaClose
+LsaQueryInformationPolicy
 LsaStorePrivateData
 LsaRetrievePrivateData
 LsaFreeMemory
 LsaNtStatusToWinError
+GetComputerNameEx
 FormatMessage
