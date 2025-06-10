@@ -64,4 +64,10 @@
         // </summary>
         public const uint MAX_PREFERRED_LENGTH = 0xFFFFFFFF;
     }
+
+    internal enum NTSTATUSInternal : uint
+    {
+        STATUS_MORE_ENTRIES = 0x00000105,
+        STATUS_NO_MORE_ENTRIES = 0x8000001A,
+    }
 }

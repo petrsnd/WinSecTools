@@ -32,6 +32,8 @@ namespace Petrsnd.WinSecLib
             }
         }
 
+        public string StringValue => new string(Buffer);
+
         public char[] Buffer { get; set; }
 
         public int Length => Buffer.Length;
@@ -40,7 +42,7 @@ namespace Petrsnd.WinSecLib
 
         public override string ToString()
         {
-            return new string(Buffer);
+            return StringValue;
         }
 
         public string ToHexString()

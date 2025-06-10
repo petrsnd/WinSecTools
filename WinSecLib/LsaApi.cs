@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
 using System.Runtime.Versioning;
 
 namespace Petrsnd.WinSecLib
@@ -68,11 +70,49 @@ namespace Petrsnd.WinSecLib
                 PolicyLookupNames,
         }
 
+        static JsonSerializerSettings SerializerSettings { get; }
+
+        [SupportedOSPlatform("windows")]
+        static LsaApi()
+        {
+            SerializerSettings = new JsonSerializerSettings
+            {
+                Formatting = Formatting.Indented,
+                ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
+                Converters = { new SidJsonConverter(), new CharArrayJsonConverter() }
+            };
+        }
+
         [SupportedOSPlatform("windows5.1.2600")]
         public static LsaPolicyHandle OpenPolicyHandle(string? systemName = null, AccessMask desiredAccess = AccessMask.PolicyAllAccess)
         {
             var policyHandle = LsaApiPInvokeHelper.CallLsaOpenPolicy(systemName, (uint)desiredAccess);
             return new LsaPolicyHandle(policyHandle);
+        }
+
+        public static string? JsonSerialize(LsaDomainAuthInfo domainAuthInfo)
+        {
+            return JsonConvert.SerializeObject(domainAuthInfo, SerializerSettings);
+        }
+
+        public static string? JsonSerialize(LsaDomainDnsInfo domainDnsInfo)
+        {
+            return JsonConvert.SerializeObject(domainDnsInfo, SerializerSettings);
+        }
+
+        public static string? JsonSerialize(LsaPrivateData lsaPrivateData)
+        {
+            return JsonConvert.SerializeObject(lsaPrivateData, SerializerSettings);
+        }
+
+        public static string? JsonSerialize(LsaTrustedDomain trustedDomain)
+        {
+            return JsonConvert.SerializeObject(trustedDomain, SerializerSettings);
+        }
+
+        public static string? JsonSerialize(IEnumerable<LsaTrustedDomain> trustedDomains)
+        {
+            return JsonConvert.SerializeObject(trustedDomains, SerializerSettings);
         }
     }
 }

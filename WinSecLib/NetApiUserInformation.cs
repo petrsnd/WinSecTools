@@ -42,7 +42,7 @@ namespace Petrsnd.WinSecLib
         Accounts = 0x00000008,
     }
 
-    public class UserInformation
+    public class NetApiUserInformation
     {
         public int Level { get; set; }
 
@@ -126,18 +126,18 @@ namespace Petrsnd.WinSecLib
             return null;
         }
 
-        internal static UserInformation CreateFrom(USER_INFO_0 userInfo)
+        internal static NetApiUserInformation CreateFrom(USER_INFO_0 userInfo)
         {
-            return new UserInformation
+            return new NetApiUserInformation
             {
                 Level = 0,
                 Name = userInfo.usri0_name.ToString(),
             };
         }
 
-        internal static UserInformation CreateFrom(USER_INFO_1 userInfo)
+        internal static NetApiUserInformation CreateFrom(USER_INFO_1 userInfo)
         {
-            return new UserInformation
+            return new NetApiUserInformation
             {
                 Level = 1,
                 Name = userInfo.usri1_name.ToString(),
@@ -152,9 +152,9 @@ namespace Petrsnd.WinSecLib
             };
         }
 
-        internal static UserInformation CreateFrom(USER_INFO_2 userInfo)
+        internal static NetApiUserInformation CreateFrom(USER_INFO_2 userInfo)
         {
-            var userInformation = new UserInformation
+            var userInformation = new NetApiUserInformation
             {
                 Level = 2,
                 Name = userInfo.usri2_name.ToString(),
@@ -191,9 +191,9 @@ namespace Petrsnd.WinSecLib
             return userInformation;
         }
 
-        internal static UserInformation CreateFrom(USER_INFO_3 userInfo)
+        internal static NetApiUserInformation CreateFrom(USER_INFO_3 userInfo)
         {
-            var userInformation = new UserInformation
+            var userInformation = new NetApiUserInformation
             {
                 Level = 3,
                 Name = userInfo.usri3_name.ToString(),
@@ -236,9 +236,9 @@ namespace Petrsnd.WinSecLib
         }
 
         [SupportedOSPlatform("windows5.1.2600")]
-        internal static UserInformation CreateFrom(USER_INFO_4 userInfo)
+        internal static NetApiUserInformation CreateFrom(USER_INFO_4 userInfo)
         {
-            var userInformation = new UserInformation
+            var userInformation = new NetApiUserInformation
             {
                 Level = 4,
                 Name = userInfo.usri4_name.ToString(),
@@ -280,9 +280,9 @@ namespace Petrsnd.WinSecLib
             return userInformation;
         }
 
-        internal static UserInformation CreateFrom(USER_INFO_10 userInfo)
+        internal static NetApiUserInformation CreateFrom(USER_INFO_10 userInfo)
         {
-            return new UserInformation
+            return new NetApiUserInformation
             {
                 Level = 10,
                 Name = userInfo.usri10_name.ToString(),
@@ -292,9 +292,9 @@ namespace Petrsnd.WinSecLib
             };
         }
 
-        internal static UserInformation CreateFrom(USER_INFO_11 userInfo)
+        internal static NetApiUserInformation CreateFrom(USER_INFO_11 userInfo)
         {
-            var userInformation = new UserInformation
+            var userInformation = new NetApiUserInformation
             {
                 Level = 11,
                 Name = userInfo.usri11_name.ToString(),
@@ -327,9 +327,9 @@ namespace Petrsnd.WinSecLib
             return userInformation;
         }
 
-        internal static UserInformation CreateFrom(USER_INFO_20 userInfo)
+        internal static NetApiUserInformation CreateFrom(USER_INFO_20 userInfo)
         {
-            return new UserInformation
+            return new NetApiUserInformation
             {
                 Level = 20,
                 Name = userInfo.usri20_name.ToString(),
@@ -341,9 +341,9 @@ namespace Petrsnd.WinSecLib
         }
 
         [SupportedOSPlatform("windows5.1.2600")]
-        internal static UserInformation CreateFrom(USER_INFO_23 userInfo)
+        internal static NetApiUserInformation CreateFrom(USER_INFO_23 userInfo)
         {
-            var userInformation = new UserInformation
+            var userInformation = new NetApiUserInformation
             {
                 Level = 23,
                 Name = userInfo.usri23_name.ToString(),
@@ -361,9 +361,9 @@ namespace Petrsnd.WinSecLib
         }
 
         [SupportedOSPlatform("windows5.1.2600")]
-        internal static UserInformation CreateFrom(USER_INFO_24 userInfo)
+        internal static NetApiUserInformation CreateFrom(USER_INFO_24 userInfo)
         {
-            var userInformation = new UserInformation
+            var userInformation = new NetApiUserInformation
             {
                 Level = 24,
                 IsInternetIdentity = userInfo.usri24_internet_identity,

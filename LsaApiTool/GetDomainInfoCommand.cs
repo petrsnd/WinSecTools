@@ -4,16 +4,15 @@ using System.Runtime.Versioning;
 
 namespace Petrsnd.LsaApiTool
 {
-    [Verb("domainDns", HelpText = "Get primary domain DNS information from LSA")]
-    internal class GetDnsDomainInfoCommand : CommandBase
+    [Verb("domainAuth", HelpText = "Get primary domain auth information from LSA")]
+    internal class GetDomainInfoCommand : CommandBase
     {
         [SupportedOSPlatform("windows5.1.2600")]
         public override void Execute()
         {
             using (var lsaPolicyHandle = LsaApi.OpenPolicyHandle())
             {
-                var domainInfo = lsaPolicyHandle.GetDnsDomainInfo();
-                Console.WriteLine(domainInfo.AsJson());
+                Console.WriteLine(lsaPolicyHandle.GetDomainAuthData().AsJson());
             }
         }
     }

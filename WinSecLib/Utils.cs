@@ -22,5 +22,17 @@ namespace Petrsnd.WinSecLib
 
             return null;
         }
+
+        [SupportedOSPlatform("windows5.1.2600")]
+        public static PSID GetPsidMustBeLocalFreed(SecurityIdentifier sid)
+        {
+            string sidStr = sid.ToString();
+            if (PInvoke.ConvertStringSidToSid(sidStr, out PSID pSID) != 0)
+            {
+                throw new Win32ErrorException(Marshal.GetLastWin32Error());
+            }
+
+            return pSID;
+        }
     }
 }

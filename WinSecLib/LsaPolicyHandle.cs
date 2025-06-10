@@ -25,10 +25,26 @@ namespace Petrsnd.WinSecLib
             LsaApiPInvokeHelper.CallLsaStorePrivateData(_policyHandle, keyName, privateData);
         }
 
-        public LsaDnsDomainInfo GetDnsDomainInfo()
+        public LsaDomainDnsInfo GetDnsDomainInfo()
         {
             // Almost everything is obsolete, so we only support getting PolicyDnsDomainInformation
             return LsaApiPInvokeHelper.CallLsaQueryInformationPolicy(_policyHandle);
+        }
+
+        public LsaTrustedDomain[] GetDnsTrustedDomains()
+        {
+            return LsaApiPInvokeHelper.CallLsaEnumerateTrustedDomainsEx(_policyHandle);
+        }
+
+        public LsaDomainAuthInfo GetDomainAuthData()
+        {
+            var domainName = GetDnsDomainInfo();
+            if (domainName == null || domainName.DomainDnsName == null)
+            {
+                throw new InvalidOperationException("Unable to get domain information, are you joined?");
+            }
+
+            return LsaApiPInvokeHelper.CallLsaQueryTrustedDomainInfoByName(_policyHandle, domainName.DomainDnsName);
         }
 
         protected virtual void Dispose(bool disposing)

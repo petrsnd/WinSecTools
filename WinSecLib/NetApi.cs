@@ -35,7 +35,7 @@ namespace Petrsnd.WinSecLib
         }
 
         [SupportedOSPlatform("windows5.0")]
-        public static UserInformation[] EnumerateUsers(EnumerationFilterFlags flags = EnumerationFilterFlags.AllAccount, int level = 0, string? server = null)
+        public static NetApiUserInformation[] EnumerateUsers(EnumerationFilterFlags flags = EnumerationFilterFlags.AllAccount, int level = 0, string? server = null)
         {
             var flagsLocal = (NET_USER_ENUM_FILTER_FLAGS)flags;
             return level switch
@@ -52,7 +52,7 @@ namespace Petrsnd.WinSecLib
         }
 
         [SupportedOSPlatform("windows5.1.2600")]
-        public static UserInformation GetUser(string username, int level, string? server = null)
+        public static NetApiUserInformation GetUser(string username, int level, string? server = null)
         {
             return level switch
             {
@@ -76,12 +76,12 @@ namespace Petrsnd.WinSecLib
             NetApiPInvokeHelper.CallNetUserSetInfo(server, username, password.ToInsecureString());
         }
 
-        public static string? JsonSerialize(UserInformation userInformation)
+        public static string? JsonSerialize(NetApiUserInformation userInformation)
         {
             return JsonConvert.SerializeObject(userInformation, SerializerSettings);
         }
 
-        public static string? JsonSerialize(IEnumerable<UserInformation> userInformations)
+        public static string? JsonSerialize(IEnumerable<NetApiUserInformation> userInformations)
         {
             return JsonConvert.SerializeObject(userInformations, SerializerSettings);
         }

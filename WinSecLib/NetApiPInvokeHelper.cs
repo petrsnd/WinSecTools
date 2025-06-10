@@ -35,9 +35,9 @@ namespace Petrsnd.WinSecLib
             };
         }
 
-        internal static UserInformation ConvertToUserInformation<T>(T userInfo)
+        internal static NetApiUserInformation ConvertToUserInformation<T>(T userInfo)
         {
-            var method = typeof(UserInformation).GetMethod("CreateFrom", BindingFlags.NonPublic | BindingFlags.Static, new Type[] { typeof(T) });
+            var method = typeof(NetApiUserInformation).GetMethod("CreateFrom", BindingFlags.NonPublic | BindingFlags.Static, new Type[] { typeof(T) });
             if (method == null)
             {
                 throw new InvalidOperationException($"Unable to find UserInformation.CreateFrom method for parameter type: {typeof(T)}");
@@ -49,15 +49,15 @@ namespace Petrsnd.WinSecLib
                 throw new InvalidOperationException($"UserInformation.CreateFrom invocation returned null for parameter type: {typeof(T)}");
             }
 
-            return (UserInformation)convertedObject;
+            return (NetApiUserInformation)convertedObject;
         }
 
         [SupportedOSPlatform("windows5.0")]
-        internal static unsafe UserInformation[] CallNetUserEnum<T>(string? servername, NET_USER_ENUM_FILTER_FLAGS filter = 0)
+        internal static unsafe NetApiUserInformation[] CallNetUserEnum<T>(string? servername, NET_USER_ENUM_FILTER_FLAGS filter = 0)
         {
             fixed (char* servernameLocal = servername)
             {
-                var userInfoList = new List<UserInformation>();
+                var userInfoList = new List<NetApiUserInformation>();
                 uint resume_handle = 0;
                 bool done = false;
                 while (!done)
@@ -102,7 +102,7 @@ namespace Petrsnd.WinSecLib
 
 
         [SupportedOSPlatform("windows5.1.2600")]
-        internal static unsafe UserInformation CallNetUserGetInfo<T>(string? servername, string? username)
+        internal static unsafe NetApiUserInformation CallNetUserGetInfo<T>(string? servername, string? username)
         {
             fixed (char* servernameLocal = servername)
             {
@@ -120,7 +120,7 @@ namespace Petrsnd.WinSecLib
 
                         if (bufptr == IntPtr.Zero)
                         {
-                            throw new Exception("NetApi method call returned success but out pointer was null");
+                            throw new Exception("NetApi method call returned success, but out pointer was null");
                         }
 
                         userInfo = (T)Marshal.PtrToStructure(bufptr, typeof(T))!;

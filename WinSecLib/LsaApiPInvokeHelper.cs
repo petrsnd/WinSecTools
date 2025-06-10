@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Windows.Win32;
@@ -124,8 +125,9 @@ namespace Petrsnd.WinSecLib
             }
         }
 
-        public static unsafe LsaDnsDomainInfo CallLsaQueryInformationPolicy(LsaCloseSafeHandle policyHandle)
+        public static unsafe LsaDomainDnsInfo CallLsaQueryInformationPolicy(LsaCloseSafeHandle policyHandle)
         {
+            // Only supporting PolicyDnsDomainInformation, because pretty much everything else is deprecated
             var rval = PInvoke.LsaQueryInformationPolicy(policyHandle, POLICY_INFORMATION_CLASS.PolicyDnsDomainInformation, out void* buffer);
             if (rval != NTSTATUS.STATUS_SUCCESS)
             {
@@ -136,11 +138,103 @@ namespace Petrsnd.WinSecLib
             {
                 IntPtr bufptr = new IntPtr(buffer);
                 var userInfo = (POLICY_DNS_DOMAIN_INFO)Marshal.PtrToStructure(bufptr, typeof(POLICY_DNS_DOMAIN_INFO))!;
-                return new LsaDnsDomainInfo(userInfo);
+                return new LsaDomainDnsInfo(userInfo);
             }
             finally
             {
                 PInvoke.LsaFreeMemory(buffer);
+            }
+        }
+
+        public static unsafe LsaTrustedDomain[] CallLsaEnumerateTrustedDomainsEx(LsaCloseSafeHandle policyHandle)
+        {
+            var trustedDomainList = new List<LsaTrustedDomain>();
+            uint enumerationHandle = 0;
+            while (true)
+            {
+                var rval = PInvoke.LsaEnumerateTrustedDomainsEx(policyHandle, ref enumerationHandle, out void* buffer, 131072 /* 128KiB */, out uint countReturned);
+                if (rval != NTSTATUS.STATUS_SUCCESS &&
+                    (uint)rval != (uint)NTSTATUSInternal.STATUS_MORE_ENTRIES &&
+                    (uint)rval != (uint)NTSTATUSInternal.STATUS_NO_MORE_ENTRIES)
+                {
+                    throw new LsaApiException(rval);
+                }
+
+                if ((uint)rval == (uint)NTSTATUSInternal.STATUS_NO_MORE_ENTRIES)
+                {
+                    break;
+                }
+
+                try
+                {
+                    IntPtr bufptr = new IntPtr(buffer);
+                    var span = new Span<TRUSTED_DOMAIN_INFORMATION_EX>(bufptr.ToPointer(), (int)countReturned);
+                    foreach (var trustedDomain in span)
+                    {
+                        trustedDomainList.Add(new LsaTrustedDomain(trustedDomain));
+                    }
+                }
+                finally
+                {
+                    PInvoke.LsaFreeMemory(buffer);
+                }
+            }
+
+            return trustedDomainList.ToArray();
+        }
+
+        public static unsafe LsaDomainAuthInfo CallLsaQueryTrustedDomainInfoByName(LsaCloseSafeHandle policyHandle, string domainName)
+        {
+            fixed (char* domainNameLocal = domainName)
+            {
+                var domainNameLsaString = new LSA_UNICODE_STRING
+                {
+                    Length = (ushort)(domainName.Length * sizeof(char)),
+                    MaximumLength = (ushort)(domainName.Length * sizeof(char)),
+                    Buffer = domainNameLocal
+                };
+
+                // Only supporting auth information so far -- this could be updated to do more if desired,
+                // but you'd have to marshal differently depending on the parameter passed in
+                var rval = PInvoke.LsaQueryTrustedDomainInfoByName(policyHandle, domainNameLsaString, TRUSTED_INFORMATION_CLASS.TrustedDomainAuthInformation, out void* buffer);
+                if (rval != NTSTATUS.STATUS_SUCCESS)
+                {
+                    throw new LsaApiException(rval);
+                }
+
+                try
+                {
+                    IntPtr bufptr = new IntPtr(buffer);
+                    var authInfo = (TRUSTED_DOMAIN_AUTH_INFORMATION)Marshal.PtrToStructure(bufptr, typeof(TRUSTED_DOMAIN_AUTH_INFORMATION))!;
+                    return new LsaDomainAuthInfo(authInfo);
+                }
+                finally
+                {
+                    PInvoke.LsaFreeMemory(buffer);
+                }
+            }
+        }
+
+        public static unsafe LsaCloseSafeHandle CallLsaOpenTrustedDomainByName(LsaCloseSafeHandle policyHandle, string domainName, uint desiredAccess)
+        {
+            fixed (char* domainNameLocal = domainName)
+            {
+                var domainNameLsaString = new LSA_UNICODE_STRING
+                {
+                    Length = (ushort)(domainName.Length * sizeof(char)),
+                    MaximumLength = (ushort)(domainName.Length * sizeof(char)),
+                    Buffer = domainNameLocal
+                };
+
+                // TODO: I haven't been able to get this to open yet, I think it might require running locally on a domain controller
+                LsaCloseSafeHandle domainPolicyHandle;
+                var rval = PInvoke.LsaOpenTrustedDomainByName(policyHandle, domainNameLsaString, desiredAccess, out domainPolicyHandle);
+                if (rval != NTSTATUS.STATUS_SUCCESS)
+                {
+                    throw new LsaApiException(rval);
+                }
+
+                return domainPolicyHandle;
             }
         }
     }

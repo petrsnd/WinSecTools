@@ -29,10 +29,13 @@ namespace Petrsnd.LsaApiTool
         [SupportedOSPlatform("windows5.1.2600")]
         private static void Main(string[] args)
         {
-            Parser.Default.ParseArguments<StorePrivateDataCommand, RetrievePrivateDataCommand, GetDnsDomainInfoCommand>(args)
+            Parser.Default.ParseArguments<StorePrivateDataCommand,RetrievePrivateDataCommand,
+                GetDnsDomainInfoCommand, GetDomainInfoCommand, GetTrustedDomainsCommand>(args)
                 .WithParsed<StorePrivateDataCommand>(Execute)
                 .WithParsed<RetrievePrivateDataCommand>(Execute)
-                .WithParsed<GetDnsDomainInfoCommand>(Execute);
+                .WithParsed<GetDnsDomainInfoCommand>(Execute)
+                .WithParsed<GetDomainInfoCommand>(Execute)
+                .WithParsed<GetTrustedDomainsCommand>(Execute);
         }
     }
 }

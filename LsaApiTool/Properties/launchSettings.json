@@ -11,6 +11,10 @@
     "LsaApiTool retrieve": {
       "commandName": "Project",
       "commandLineArgs": "retrieve -k ABCD"
+    },
+    "LsaApiTool domainTrust": {
+      "commandName": "Project",
+      "commandLineArgs": "domainTrust"
     }
   }
 }
