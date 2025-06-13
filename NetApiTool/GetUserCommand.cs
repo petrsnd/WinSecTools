@@ -1,5 +1,6 @@
 ﻿using CommandLine;
 using Petrsnd.WinSecLib;
+using Petrsnd.WinSecLib.Extensions;
 using System.Runtime.Versioning;
 
 namespace Petrsnd.NetApiTool

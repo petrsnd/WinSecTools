@@ -1,9 +1,17 @@
-﻿using System.Security;
+﻿using System.Collections.Generic;
+using System.Net;
+using System.Runtime.Versioning;
+using System.Security;
 
-namespace Petrsnd.NetApiTool
+namespace Petrsnd.WinSecLib.Extensions
 {
-    internal static class Extensions
+    static public class BuiltInTypeExtensions
     {
+        public static string ToInsecureString(this SecureString thisSecureString)
+        {
+            return new NetworkCredential(string.Empty, thisSecureString).Password;
+        }
+
         public static SecureString? ToSecureString(this string thisString)
         {
             if (string.IsNullOrWhiteSpace(thisString))

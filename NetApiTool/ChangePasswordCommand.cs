@@ -19,7 +19,7 @@ namespace Petrsnd.NetApiTool
             HelpText = "Read any required password from console stdin")]
         public bool ReadPassword { get; set; }
 
-        [SupportedOSPlatform("windows5.0")]
+        [SupportedOSPlatform("windows5.1.2600")]
         public override void Execute()
         {
             var username = HandleUsernamePrompt(Username);

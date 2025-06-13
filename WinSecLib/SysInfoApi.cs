@@ -7,7 +7,7 @@ using Windows.Win32.System.SystemInformation;
 namespace Petrsnd.WinSecLib
 {
     [SupportedOSPlatform("windows5.1.2600")]
-    internal static class SysInfoApi
+    public static class SysInfoApi
     {
         public static string GetComputerNetBiosName()
         {

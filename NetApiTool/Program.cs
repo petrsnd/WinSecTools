@@ -6,7 +6,7 @@ namespace Petrsnd.NetApiTool
 {
     internal class Program
     {
-        [SupportedOSPlatform("windows5.0")]
+        [SupportedOSPlatform("windows5.1.2600")]
         private static void Execute(CommandBase command)
         {
             try
@@ -26,7 +26,7 @@ namespace Petrsnd.NetApiTool
             }
         }
 
-        [SupportedOSPlatform("windows5.0")]
+        [SupportedOSPlatform("windows5.1.2600")]
         private static void Main(string[] args)
         {
             Parser.Default.ParseArguments<ChangePasswordCommand, GetUserCommand, EnumUserCommand>(args)

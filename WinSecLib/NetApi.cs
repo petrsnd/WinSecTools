@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Petrsnd.WinSecLib.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Runtime.Versioning;

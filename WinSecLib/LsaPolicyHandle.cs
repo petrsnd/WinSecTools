@@ -44,6 +44,8 @@ namespace Petrsnd.WinSecLib
                 throw new InvalidOperationException("Unable to get domain information, are you joined?");
             }
 
+            Console.WriteLine($"Querying trusted domain information for {domainName.DomainDnsName}");
+
             return LsaApiPInvokeHelper.CallLsaQueryTrustedDomainInfoByName(_policyHandle, domainName.DomainDnsName);
         }
 
