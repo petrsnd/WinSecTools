@@ -1,5 +1,4 @@
 ﻿using CommandLine;
-using Kerberos.NET;
 using Kerberos.NET.Client;
 using Kerberos.NET.Configuration;
 using Kerberos.NET.Credentials;
@@ -7,6 +6,7 @@ using Petrsnd.WinSecLib;
 using Petrsnd.WinSecLib.Extensions;
 using System.Runtime.Versioning;
 using System.Security;
+using System.Security.Principal;
 
 namespace Petrsnd.Krb5Decrypt
 {
@@ -20,8 +20,9 @@ only the user password may be kept secret via reading from STDIN. It is
 assumed that the value for the computer password is known to be insecure and
 should be rotated to an unknown value after testing.
 ";
+        private static string? ComputerSamAccountName;
 
-        private static string? ComputerFqdn;
+        private static string? ComputerHostname;
 
         private static string? DomainFqdn;
 
@@ -69,12 +70,41 @@ should be rotated to an unknown value after testing.
             return password;
         }
 
+        private static void ValidateRunningAsAdministrator()
+        {
+            using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
+            {
+                WindowsPrincipal principal = new WindowsPrincipal(identity);
+                if (!principal.IsInRole(WindowsBuiltInRole.Administrator))
+                {
+                    throw new InvalidOperationException("This tool must be run as Administrator.");
+                }
+            }
+        }
+
         private static void ValidatePrerequisites()
         {
-            Console.WriteLine($"Computer FQDN: {ComputerFqdn}");
-            if (string.IsNullOrEmpty(ComputerFqdn))
+            try
             {
-                throw new InvalidOperationException("Unable to determine the computer FQDN.");
+                ComputerHostname = System.Net.Dns.GetHostName();
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("This computer is not configured to use DNS names, using environment...");
+                ComputerHostname = Environment.MachineName;
+            }
+
+            using (var policyHandle = LsaApi.OpenPolicyHandle())
+            {
+                var domainInfo = policyHandle.GetDnsDomainInfo();
+                DomainFqdn = domainInfo.DomainDnsName;
+                KerberosRealm = DomainFqdn?.ToUpper();
+            }
+
+            Console.WriteLine($"Computer Hostname: {ComputerHostname}");
+            if (string.IsNullOrEmpty(ComputerHostname))
+            {
+                throw new InvalidOperationException("Unable to determine the computer hostname.");
             }
 
             Console.WriteLine($"Domain FQDN: {DomainFqdn}");
@@ -103,47 +133,75 @@ should be rotated to an unknown value after testing.
             return new KerberosClient(krb5Conf);
         }
 
+        private static KerberosClient? RunKinit(string userPrincipal, SecureString userPassword, bool nonInteractive)
+        {
+            Console.WriteLine($"Attempting to authenticate as {userPrincipal}...");
+            var client = GetKerberosClient();
+            var creds = new KerberosPasswordCredential(userPrincipal, userPassword.ToInsecureString());
+            try
+            {
+                client.Authenticate(creds).Wait();
+                Console.WriteLine("SUCCESS");
+                return client;
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("FAILED");
+                if (nonInteractive)
+                {
+                    throw;
+                }
+
+                return null;
+            }
+        }
+
         private static void Execute(Krb5DecryptOptions opts)
         {
             try
             {
-                ComputerFqdn = SysInfoApi.GetComputerDnsFullyQualified();
-                using (var policyHandle = LsaApi.OpenPolicyHandle())
-                {
-                    DomainFqdn = policyHandle.GetDnsDomainInfo().DomainDnsName;
-                    KerberosRealm = DomainFqdn?.ToUpper();
-                }
-
+                ValidateRunningAsAdministrator();
                 ValidatePrerequisites();
 
-                var client = GetKerberosClient();
-
+                string? userPrincipalName = null;
                 SecureString? userPassword = null;
+                string? machinePassword = opts.MachinePassword;
+                KerberosClient? userKerberosClient = null;
                 if (opts.ReadUserPassword)
                 {
                     Console.WriteLine("Reading user password from STDIN...");
+                    userPrincipalName = opts.UserPrincipalName;
                     userPassword = Console.ReadLine()?.ToSecureString();
                     if (userPassword == null)
                     {
                         throw new InvalidOperationException("Failed to obtain user password via STDIN.");
                     }
 
-                    if (string.IsNullOrEmpty(opts.UserPrincipalName) || string.IsNullOrEmpty(opts.MachinePassword))
+                    if (string.IsNullOrEmpty(opts.UserPrincipalName) || string.IsNullOrEmpty(machinePassword))
                     {
                         throw new InvalidOperationException("You must specify user principal name and machine password via command-line options to use non-interactive mode.");
                     }
-                }
 
-                var userPrincipal = PromptForValueIfNeeded("User principal name [ex. dan@some.domain]", opts.UserPrincipalName);
-                // This makes the prompting feel better to have this after the user principal name
-                if (userPassword == null)
+                    userKerberosClient = RunKinit(opts.UserPrincipalName, userPassword, opts.ReadUserPassword);
+                }
+                else
                 {
-                    userPassword = PromptForSecret("User password");
+                    while (userKerberosClient == null)
+                    {
+                        userPrincipalName = PromptForValueIfNeeded("User principal name [ex. dan@some.domain]", opts.UserPrincipalName);
+                        userPassword = PromptForSecret("User password");
+                        userKerberosClient = RunKinit(userPrincipalName, userPassword, opts.ReadUserPassword);
+                    }
                 }
 
-                Console.WriteLine($"Attempting to authenticate as {userPrincipal}...");
-                var creds = new KerberosPasswordCredential(userPrincipal, userPassword.ToInsecureString());
-                client.Authenticate(creds).Wait();
+                ComputerSamAccountName = DirectoryServicesUtils.GetComputerSamAccountName(ComputerHostname!, DomainFqdn!, userPrincipalName!, userPassword!);
+                Console.WriteLine($"Computer SAM account name: {ComputerSamAccountName}");
+
+                var servicePrincipalNames = DirectoryServicesUtils.GetComputerServicePrincipalNames(DomainFqdn!, ComputerSamAccountName!, userPrincipalName!, userPassword!);
+                Console.WriteLine($"Computer service principal names: {servicePrincipalNames.Select(spn => $"{Environment.NewLine}  {spn}")}");
+
+                Console.WriteLine("Krb5Decrypt will set a new password for this computer in AD and store it locally.");
+                machinePassword = PromptForValueIfNeeded("New machine password", machinePassword);
 
 
             }
@@ -160,10 +218,6 @@ should be rotated to an unknown value after testing.
             }
         }
 
-        private static void Main(string[] args)
-        {
-            Parser.Default.ParseArguments<Krb5DecryptOptions>(args)
-                .WithParsed<Krb5DecryptOptions>(Execute);
-        }
+        private static void Main(string[] args) => Parser.Default.ParseArguments<Krb5DecryptOptions>(args).WithParsed(Execute);
     }
 }

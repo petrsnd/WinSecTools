@@ -15,6 +15,7 @@
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="Kerberos.NET" Version="4.6.77" />
+    <PackageReference Include="System.DirectoryServices.AccountManagement" Version="9.0.6" />
   </ItemGroup>
 
   <ItemGroup>
