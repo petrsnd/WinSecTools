@@ -120,6 +120,11 @@ should be rotated to an unknown value after testing.
             }
         }
 
+        private static KerberosCredential GetKerberosCredential(string userPrincipal, SecureString userPassword)
+        {
+            return new KerberosPasswordCredential(userPrincipal, userPassword.ToInsecureString());
+        }
+
         private static KerberosClient GetKerberosClient()
         {
             var krb5Conf = new Krb5Config
@@ -133,11 +138,10 @@ should be rotated to an unknown value after testing.
             return new KerberosClient(krb5Conf);
         }
 
-        private static KerberosClient? RunKinit(string userPrincipal, SecureString userPassword, bool nonInteractive)
+        private static KerberosClient? RunKinit(KerberosCredential creds, bool nonInteractive)
         {
-            Console.WriteLine($"Attempting to authenticate as {userPrincipal}...");
+            Console.WriteLine($"Attempting to authenticate as {creds}...");
             var client = GetKerberosClient();
-            var creds = new KerberosPasswordCredential(userPrincipal, userPassword.ToInsecureString());
             try
             {
                 client.Authenticate(creds).Wait();
@@ -166,8 +170,10 @@ should be rotated to an unknown value after testing.
                 string? userPrincipalName = null;
                 SecureString? userPassword = null;
                 string? machinePassword = opts.MachinePassword;
+                KerberosCredential? creds = null;
                 KerberosClient? userKerberosClient = null;
-                if (opts.ReadUserPassword)
+                bool nonInteractive = opts.ReadUserPassword;
+                if (nonInteractive)
                 {
                     Console.WriteLine("Reading user password from STDIN...");
                     userPrincipalName = opts.UserPrincipalName;
@@ -177,12 +183,13 @@ should be rotated to an unknown value after testing.
                         throw new InvalidOperationException("Failed to obtain user password via STDIN.");
                     }
 
-                    if (string.IsNullOrEmpty(opts.UserPrincipalName) || string.IsNullOrEmpty(machinePassword))
+                    if (string.IsNullOrEmpty(userPrincipalName) || string.IsNullOrEmpty(machinePassword))
                     {
                         throw new InvalidOperationException("You must specify user principal name and machine password via command-line options to use non-interactive mode.");
                     }
 
-                    userKerberosClient = RunKinit(opts.UserPrincipalName, userPassword, opts.ReadUserPassword);
+                    creds = GetKerberosCredential(userPrincipalName, userPassword);
+                    userKerberosClient = RunKinit(creds, nonInteractive);
                 }
                 else
                 {
@@ -190,7 +197,8 @@ should be rotated to an unknown value after testing.
                     {
                         userPrincipalName = PromptForValueIfNeeded("User principal name [ex. dan@some.domain]", opts.UserPrincipalName);
                         userPassword = PromptForSecret("User password");
-                        userKerberosClient = RunKinit(userPrincipalName, userPassword, opts.ReadUserPassword);
+                        creds = GetKerberosCredential(userPrincipalName, userPassword);
+                        userKerberosClient = RunKinit(creds, nonInteractive);
                     }
                 }
 
@@ -199,11 +207,38 @@ should be rotated to an unknown value after testing.
 
                 var servicePrincipalNames = DirectoryServicesUtils.GetComputerServicePrincipalNames(DomainFqdn!, ComputerSamAccountName!, userPrincipalName!, userPassword!);
                 Console.WriteLine($"Computer service principal names: {servicePrincipalNames.Select(spn => $"{Environment.NewLine}  {spn}")}");
+                if (opts.ServiceClass != null)
+                {
+                    var servicePrincipalName = $"{opts.ServiceClass.ToUpper()}/{ComputerHostname}.{DomainFqdn}";
+                    Console.WriteLine($"Adding service principal name: {servicePrincipalName}");
+                    if (DirectoryServicesUtils.AddComputerServicePrincipalName(servicePrincipalName, DomainFqdn!, ComputerSamAccountName!, userPrincipalName!, userPassword!))
+                    {
+                        Console.WriteLine("SUCCESS");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Already present");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("If your desired service principal name is missing, use the -s (--service-class) option to specify the service name (e.g. '-s HTTP').");
+                }
 
                 Console.WriteLine("Krb5Decrypt will set a new password for this computer in AD and store it locally.");
                 machinePassword = PromptForValueIfNeeded("New machine password", machinePassword);
 
+                Console.WriteLine("Setting new password for computer via kpasswd protocol...");
+                userKerberosClient!.SetPassword(creds, ComputerSamAccountName!, DomainFqdn!, machinePassword);
+                Console.WriteLine("SUCCESS");
 
+                Console.WriteLine("Storing new password locally on this computer...");
+                using (var policyHandle = LsaApi.OpenPolicyHandle())
+                {
+                    policyHandle.StorePrivateData("$machine.acc", new LsaPrivateData(machinePassword));
+                }
+
+                Console.WriteLine("SUCCESS");
             }
             catch (Exception ex) when (ex is Win32ErrorException || ex is LsaApiException || ex is NetApiException)
             {
