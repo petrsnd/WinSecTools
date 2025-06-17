@@ -1,6 +1,5 @@
 ﻿using CommandLine;
 using Kerberos.NET.Client;
-using Kerberos.NET.Configuration;
 using Kerberos.NET.Credentials;
 using Petrsnd.WinSecLib;
 using Petrsnd.WinSecLib.Extensions;
@@ -27,6 +26,8 @@ should be rotated to an unknown value after testing.
         private static string? DomainFqdn;
 
         private static string? KerberosRealm;
+
+        private static KerberosNetHelper? KerberosNetHelper;
 
         private static string? Prompt(string name)
         {
@@ -120,33 +121,14 @@ should be rotated to an unknown value after testing.
             }
         }
 
-        private static KerberosCredential GetKerberosCredential(string userPrincipal, SecureString userPassword)
+        private static bool RunKinit(bool nonInteractive)
         {
-            return new KerberosPasswordCredential(userPrincipal, userPassword.ToInsecureString());
-        }
-
-        private static KerberosClient GetKerberosClient()
-        {
-            var krb5Conf = new Krb5Config
-            {
-                Defaults =
-                    {
-                        DefaultRealm = KerberosRealm,
-                        DefaultCCacheName = "MEMORY:",
-                    },
-            };
-            return new KerberosClient(krb5Conf);
-        }
-
-        private static KerberosClient? RunKinit(KerberosCredential creds, bool nonInteractive)
-        {
-            Console.WriteLine($"Attempting to authenticate as {creds}...");
-            var client = GetKerberosClient();
+            Console.WriteLine($"Attempting to authenticate as {KerberosNetHelper!.UserPrincipalName}...");
             try
             {
-                client.Authenticate(creds).Wait();
+                KerberosNetHelper!.Kinit();
                 Console.WriteLine("SUCCESS");
-                return client;
+                return true;
             }
             catch (Exception)
             {
@@ -156,8 +138,47 @@ should be rotated to an unknown value after testing.
                     throw;
                 }
 
-                return null;
+                return false;
             }
+        }
+
+        private static void SetServicePrincipalName(string? serviceClass, string userPrincipalName, SecureString userPassword)
+        {
+            var servicePrincipalNames = DirectoryServicesUtils.GetComputerServicePrincipalNames(DomainFqdn!, ComputerSamAccountName!, userPrincipalName!, userPassword!);
+            Console.WriteLine($"Computer service principal names: {servicePrincipalNames.Select(spn => $"{Environment.NewLine}  {spn}")}");
+            if (serviceClass != null)
+            {
+                var servicePrincipalName = $"{serviceClass.ToUpper()}/{ComputerHostname}.{DomainFqdn}";
+                Console.WriteLine($"Adding service principal name: {servicePrincipalName}");
+                if (DirectoryServicesUtils.AddComputerServicePrincipalName(servicePrincipalName, DomainFqdn!, ComputerSamAccountName!, userPrincipalName!, userPassword!))
+                {
+                    Console.WriteLine("SUCCESS");
+                }
+                else
+                {
+                    Console.WriteLine("Already present");
+                }
+            }
+            else
+            {
+                Console.WriteLine("If your desired service principal name is missing,");
+                Console.WriteLine("  use the -s (--service-class) option to specify the service name (e.g. '-s HTTP').");
+            }
+        }
+
+        private static void SetComputerPassword(string machinePassword)
+        {
+            Console.WriteLine("Setting new password for computer via kpasswd protocol...");
+            KerberosNetHelper!.SetComputerPassword(ComputerSamAccountName!, DomainFqdn!, machinePassword);
+            Console.WriteLine("SUCCESS");
+
+            Console.WriteLine("Storing new password locally on this computer...");
+            using (var policyHandle = LsaApi.OpenPolicyHandle())
+            {
+                policyHandle.StorePrivateData("$machine.acc", new LsaPrivateData(machinePassword));
+            }
+
+            Console.WriteLine("SUCCESS");
         }
 
         private static void Execute(Krb5DecryptOptions opts)
@@ -170,8 +191,6 @@ should be rotated to an unknown value after testing.
                 string? userPrincipalName = null;
                 SecureString? userPassword = null;
                 string? machinePassword = opts.MachinePassword;
-                KerberosCredential? creds = null;
-                KerberosClient? userKerberosClient = null;
                 bool nonInteractive = opts.ReadUserPassword;
                 if (nonInteractive)
                 {
@@ -188,57 +207,32 @@ should be rotated to an unknown value after testing.
                         throw new InvalidOperationException("You must specify user principal name and machine password via command-line options to use non-interactive mode.");
                     }
 
-                    creds = GetKerberosCredential(userPrincipalName, userPassword);
-                    userKerberosClient = RunKinit(creds, nonInteractive);
+                    KerberosNetHelper = new KerberosNetHelper(KerberosRealm!, userPrincipalName, userPassword);
+                    RunKinit(nonInteractive);
                 }
                 else
                 {
-                    while (userKerberosClient == null)
+                    bool authenticated = false;
+                    while (!authenticated)
                     {
                         userPrincipalName = PromptForValueIfNeeded("User principal name [ex. dan@some.domain]", opts.UserPrincipalName);
                         userPassword = PromptForSecret("User password");
-                        creds = GetKerberosCredential(userPrincipalName, userPassword);
-                        userKerberosClient = RunKinit(creds, nonInteractive);
+                        KerberosNetHelper = new KerberosNetHelper(KerberosRealm!, userPrincipalName, userPassword);
+                        authenticated = RunKinit(nonInteractive);
                     }
                 }
 
                 ComputerSamAccountName = DirectoryServicesUtils.GetComputerSamAccountName(ComputerHostname!, DomainFqdn!, userPrincipalName!, userPassword!);
                 Console.WriteLine($"Computer SAM account name: {ComputerSamAccountName}");
 
-                var servicePrincipalNames = DirectoryServicesUtils.GetComputerServicePrincipalNames(DomainFqdn!, ComputerSamAccountName!, userPrincipalName!, userPassword!);
-                Console.WriteLine($"Computer service principal names: {servicePrincipalNames.Select(spn => $"{Environment.NewLine}  {spn}")}");
-                if (opts.ServiceClass != null)
-                {
-                    var servicePrincipalName = $"{opts.ServiceClass.ToUpper()}/{ComputerHostname}.{DomainFqdn}";
-                    Console.WriteLine($"Adding service principal name: {servicePrincipalName}");
-                    if (DirectoryServicesUtils.AddComputerServicePrincipalName(servicePrincipalName, DomainFqdn!, ComputerSamAccountName!, userPrincipalName!, userPassword!))
-                    {
-                        Console.WriteLine("SUCCESS");
-                    }
-                    else
-                    {
-                        Console.WriteLine("Already present");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("If your desired service principal name is missing, use the -s (--service-class) option to specify the service name (e.g. '-s HTTP').");
-                }
+                SetServicePrincipalName(opts.ServiceClass, userPrincipalName!, userPassword!);
 
                 Console.WriteLine("Krb5Decrypt will set a new password for this computer in AD and store it locally.");
                 machinePassword = PromptForValueIfNeeded("New machine password", machinePassword);
 
-                Console.WriteLine("Setting new password for computer via kpasswd protocol...");
-                userKerberosClient!.SetPassword(creds, ComputerSamAccountName!, DomainFqdn!, machinePassword);
-                Console.WriteLine("SUCCESS");
+                SetComputerPassword(machinePassword);
 
-                Console.WriteLine("Storing new password locally on this computer...");
-                using (var policyHandle = LsaApi.OpenPolicyHandle())
-                {
-                    policyHandle.StorePrivateData("$machine.acc", new LsaPrivateData(machinePassword));
-                }
-
-                Console.WriteLine("SUCCESS");
+                //CreateKeytabFile()
             }
             catch (Exception ex) when (ex is Win32ErrorException || ex is LsaApiException || ex is NetApiException)
             {
