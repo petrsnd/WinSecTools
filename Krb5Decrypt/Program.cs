@@ -1,8 +1,7 @@
 ﻿using CommandLine;
-using Kerberos.NET.Client;
-using Kerberos.NET.Credentials;
 using Petrsnd.WinSecLib;
 using Petrsnd.WinSecLib.Extensions;
+using System.ComponentModel.Design;
 using System.Runtime.Versioning;
 using System.Security;
 using System.Security.Principal;
@@ -19,15 +18,14 @@ only the user password may be kept secret via reading from STDIN. It is
 assumed that the value for the computer password is known to be insecure and
 should be rotated to an unknown value after testing.
 ";
+
         private static string? ComputerSamAccountName;
-
         private static string? ComputerHostname;
-
         private static string? DomainFqdn;
-
         private static string? KerberosRealm;
-
         private static KerberosNetHelper? KerberosNetHelper;
+        private static string? KeytabPath;
+        private static string? EncryptionType;
 
         private static string? Prompt(string name)
         {
@@ -69,6 +67,25 @@ should be rotated to an unknown value after testing.
             }
             Console.Write(Environment.NewLine);
             return password;
+        }
+
+        private static void SetKeytabPath(string path)
+        {
+            if (Path.IsPathFullyQualified(path))
+            {
+                KeytabPath = path;
+            }
+            else
+            {
+                KeytabPath = Path.Combine(Directory.GetCurrentDirectory(), path);
+            }
+
+            Console.WriteLine($"Keytab path: {KeytabPath}");
+            if (Path.Exists(KeytabPath))
+            {
+                Console.WriteLine("Keytab path already exists and will be overwritten");
+                File.Delete(KeytabPath);
+            }
         }
 
         private static void ValidateRunningAsAdministrator()
@@ -119,6 +136,8 @@ should be rotated to an unknown value after testing.
             {
                 throw new InvalidOperationException("Unable to determine the Kerberos realm, is this machine joined?");
             }
+
+            Console.WriteLine($"Using encryption type: {EncryptionType}");
         }
 
         private static bool RunKinit(bool nonInteractive)
@@ -142,7 +161,7 @@ should be rotated to an unknown value after testing.
             }
         }
 
-        private static void SetServicePrincipalName(string? serviceClass, string userPrincipalName, SecureString userPassword)
+        private static string[] SetServicePrincipalName(string? serviceClass, string userPrincipalName, SecureString userPassword)
         {
             var servicePrincipalNames = DirectoryServicesUtils.GetComputerServicePrincipalNames(DomainFqdn!, ComputerSamAccountName!, userPrincipalName!, userPassword!);
             Console.WriteLine($"Computer service principal names: {servicePrincipalNames.Select(spn => $"{Environment.NewLine}  {spn}")}");
@@ -164,6 +183,9 @@ should be rotated to an unknown value after testing.
                 Console.WriteLine("If your desired service principal name is missing,");
                 Console.WriteLine("  use the -s (--service-class) option to specify the service name (e.g. '-s HTTP').");
             }
+
+            // return the new list directly from the directory
+            return DirectoryServicesUtils.GetComputerServicePrincipalNames(DomainFqdn!, ComputerSamAccountName!, userPrincipalName!, userPassword);
         }
 
         private static void SetComputerPassword(string machinePassword)
@@ -185,6 +207,8 @@ should be rotated to an unknown value after testing.
         {
             try
             {
+                EncryptionType = opts.EncryptionType!.ToLower();
+
                 ValidateRunningAsAdministrator();
                 ValidatePrerequisites();
 
@@ -222,17 +246,20 @@ should be rotated to an unknown value after testing.
                     }
                 }
 
+                KerberosNetHelper!.ValidateEncryptionType(EncryptionType!);
                 ComputerSamAccountName = DirectoryServicesUtils.GetComputerSamAccountName(ComputerHostname!, DomainFqdn!, userPrincipalName!, userPassword!);
                 Console.WriteLine($"Computer SAM account name: {ComputerSamAccountName}");
 
-                SetServicePrincipalName(opts.ServiceClass, userPrincipalName!, userPassword!);
+                var servicePrincipalNames = SetServicePrincipalName(opts.ServiceClass, userPrincipalName!, userPassword!);
 
                 Console.WriteLine("Krb5Decrypt will set a new password for this computer in AD and store it locally.");
                 machinePassword = PromptForValueIfNeeded("New machine password", machinePassword);
 
                 SetComputerPassword(machinePassword);
 
-                //CreateKeytabFile()
+                SetKeytabPath(opts.KeytabFile!);
+                Console.WriteLine("Generating the keytab file...");
+                KerberosNetHelper!.GenerateKeytab(servicePrincipalNames, machinePassword, EncryptionType!, KeytabPath!);
             }
             catch (Exception ex) when (ex is Win32ErrorException || ex is LsaApiException || ex is NetApiException)
             {
