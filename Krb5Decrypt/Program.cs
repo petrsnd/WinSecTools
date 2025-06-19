@@ -258,7 +258,7 @@ should be rotated to an unknown value after testing.
 
                 SetKeytabPath(opts.KeytabFile!);
                 Console.WriteLine("Generating the keytab file...");
-                KerberosNetHelper!.GenerateKeytab(servicePrincipalNames, machinePassword, EncryptionType!, KeytabPath!);
+                KerberosNetHelper!.GenerateKeytab(servicePrincipalNames, ComputerSamAccountName, machinePassword, EncryptionType!, KeytabPath!);
             }
             catch (Exception ex) when (ex is Win32ErrorException || ex is LsaApiException || ex is NetApiException)
             {

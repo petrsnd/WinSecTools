@@ -52,7 +52,7 @@ namespace Petrsnd.Krb5Decrypt
             }
         }
 
-        public void GenerateKeytab(string[] servicePrincipalNames, string computerPassword, string encryptionType, string keytabPath)
+        public void GenerateKeytab(string[] servicePrincipalNames, string computerSamAccountName, string computerPassword, string encryptionType, string keytabPath)
         {
             var keytab = new KeyTable();
 
@@ -69,6 +69,7 @@ namespace Petrsnd.Krb5Decrypt
             keytab.Entries.Add(new KeyEntry(key));
 
             // Add machine entries (one for each SPN)
+            var salt = GetServiceSalt(computerSamAccountName);
             foreach (var spn in servicePrincipalNames)
             {
                 krbPrincipalName = KrbPrincipalName.FromString(spn, PrincipalNameType.NT_SRV_HST);
@@ -76,7 +77,7 @@ namespace Petrsnd.Krb5Decrypt
                     password: computerPassword,
                     principalName: PrincipalName.FromKrbPrincipalName(krbPrincipalName, KerberosRealm),
                     host: GetServiceHost(spn),
-                    salt: GetServiceSalt(spn),
+                    salt: salt,
                     etype: eType!.Value,
                     saltType: SaltType.ActiveDirectoryService
                 );
@@ -123,13 +124,11 @@ namespace Petrsnd.Krb5Decrypt
             return $"{KerberosRealm}{simpleName}";
         }
 
-        private string GetServiceSalt(string servicePrincipalName)
+        private string GetServiceSalt(string samAccountName)
         {
-            var parts = servicePrincipalName.Split('/');
-            var serviceClass = parts[0];
-            var hostName = parts[1];
-            return $"{KerberosRealm}{serviceClass}{hostName}";
+            return $"{KerberosRealm}host{samAccountName.ToLower().TrimEnd('$')}.{KerberosRealm.ToLower()}";
         }
+
         private string GetServiceHost(string servicePrincipalName)
         {
             var parts = servicePrincipalName.Split('/');
