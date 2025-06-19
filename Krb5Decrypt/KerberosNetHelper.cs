@@ -71,9 +71,9 @@ namespace Petrsnd.Krb5Decrypt
             // Add machine entries (one for each SPN)
             foreach (var spn in servicePrincipalNames)
             {
-                krbPrincipalName = KrbPrincipalName.FromString(spn, PrincipalNameType.NT_SRV_HST, KerberosRealm);
+                krbPrincipalName = KrbPrincipalName.FromString(spn, PrincipalNameType.NT_SRV_HST);
                 key = new KerberosKey(
-                    password: UserPassword.ToInsecureString(),
+                    password: computerPassword,
                     principalName: PrincipalName.FromKrbPrincipalName(krbPrincipalName, KerberosRealm),
                     host: GetServiceHost(spn),
                     salt: GetServiceSalt(spn),
