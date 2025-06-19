@@ -40,7 +40,8 @@ namespace Petrsnd.Krb5Decrypt
 
         public void ValidateEncryptionType(string encryptionType)
         {
-            if (!Krb5Conf.Defaults.PermittedEncryptionTypes.Select(e => e.ToString().ToLower()).Contains(encryptionType.ToLower()))
+            var permittedEncryptionTypes = Krb5Conf.Defaults.PermittedEncryptionTypes.Select(e => e.ToString().ToLower());
+            if (!permittedEncryptionTypes.Contains(encryptionType.ToLower()))
             {
                 throw new InvalidOperationException("Encryption type must be one of the permitted types");
             }

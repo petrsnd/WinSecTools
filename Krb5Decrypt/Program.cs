@@ -1,7 +1,6 @@
 ﻿using CommandLine;
 using Petrsnd.WinSecLib;
 using Petrsnd.WinSecLib.Extensions;
-using System.ComponentModel.Design;
 using System.Runtime.Versioning;
 using System.Security;
 using System.Security.Principal;
@@ -164,7 +163,7 @@ should be rotated to an unknown value after testing.
         private static string[] SetServicePrincipalName(string? serviceClass, string userPrincipalName, SecureString userPassword)
         {
             var servicePrincipalNames = DirectoryServicesUtils.GetComputerServicePrincipalNames(DomainFqdn!, ComputerSamAccountName!, userPrincipalName!, userPassword!);
-            Console.WriteLine($"Computer service principal names: {servicePrincipalNames.Select(spn => $"{Environment.NewLine}  {spn}")}");
+            Console.WriteLine($"Computer service principal names:{Environment.NewLine}{string.Join(Environment.NewLine, servicePrincipalNames.Select(spn => $"  {spn}"))}");
             if (serviceClass != null)
             {
                 var servicePrincipalName = $"{serviceClass.ToUpper()}/{ComputerHostname}.{DomainFqdn}";
@@ -207,7 +206,7 @@ should be rotated to an unknown value after testing.
         {
             try
             {
-                EncryptionType = opts.EncryptionType!.ToLower();
+                EncryptionType = opts.EncryptionType!.ToLower().Replace('-', '_');
 
                 ValidateRunningAsAdministrator();
                 ValidatePrerequisites();
